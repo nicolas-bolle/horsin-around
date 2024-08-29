@@ -6,22 +6,50 @@ import pandas as pd
 def parse_float(x: float | str)-> float:
     """Parse an input as a float in [0, 1], whether it's a float or a string"""
     if isinstance(x, str):
-        assert x.endswith('%')
+        assert x.endswith('%'), f'Error parsing {x} as float'
         return float(x.replace('%', '')) / 100
     else:
         return float(x)
+    
+def parse_int(x: int | float | str)-> int:
+    """Parse an input as an int"""
+    return int(x)
 
-def parse_list(x) -> list:
-    """Parse an input as a list
+def parse_str(x)-> str:
+    """Parse an input as a str"""
+    return str(x)
+
+def parse_list(x, _type: str) -> list:
+    """Parse an input as a list, with the specified type
     Really just flattening the list if necessary
     """
-    return list(np.array(x).flatten())
+    match _type:
+        case 'float':
+            parser = parse_float
+        case 'int':
+            parser = parse_int
+        case 'str':
+            parser = parse_str
+        case _:
+            assert False, f'Unknown type specification {_type}'
+    return [parser(t) for t in np.array(x).flatten()]
 
-def parse_dataframe(x: list[list], cols: list) -> pd.DataFrame:
+def parse_dataframe(data: list[list], cols: list, types: None | str | dict = None) -> pd.DataFrame:
     """Parse an input as a pd.DataFrame"""
-    cols = parse_list(cols)
-    assert len(cols) == len(x[0])
-    return pd.DataFrame(data=x, columns=cols)
+    cols = parse_list(cols, 'str')
+    assert len(cols) == len(data[0]), f"Lengths {len(cols)} and {len(data[0])} don't match"
+
+    # types for columns
+    if types is None:
+        types = 'float'
+    if isinstance(types, str):
+        types = {col: types for col in cols}
+
+    df = pd.DataFrame(data=data, columns=cols)
+    for col, _type in types.items():
+        df[col] = parse_list(df[col].values, _type)
+
+    return df
 
 def flag_pareto_optimal(df: pd.DataFrame) -> list:
     """Given a dataframe with numeric columns, return a list of bools flagging Pareto optimality

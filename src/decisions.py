@@ -13,8 +13,8 @@ def get_ranks(df_primary: pd.DataFrame, df_secondary: pd.DataFrame) -> pd.Series
         3. Primary attributes (in order)
         4. Secondary attributes (in order)
     """
-    assert (df_primary.index == df_secondary.index).all()
-    assert len(set(df_primary.columns) & set(df_secondary.columns)) == 0
+    assert (df_primary.index == df_secondary.index).all(), f'Indexes {df_primary.index} and {df_secondary.index} not equal'
+    assert len(set(df_primary.columns) & set(df_secondary.columns)) == 0 f'Cols {df_primary.columns} and {df_secondary.columns} overlap'
     
     df = df_primary.join(df_secondary)
 
@@ -44,10 +44,10 @@ def propose_merge(names: list, ranks: list, zones: list) -> str:
     Returns:
         moves (list): descriptions of moves to make
     """
-    assert len(names) == len(ranks)
-    assert len(names) == len(zones)
-    assert len(set(zones) - {1, 2}) == 0, 'Zones must be either 1 or 2'
-    assert set(ranks) == set(range(1, len(ranks) + 1)), 'Ranks must be the numbers 1 to len(ranks)'
+    assert len(names) == len(ranks), f"Lengths {len(names)} and {len(ranks)} don't match"
+    assert len(names) == len(zones), f"Lengths {len(names)} and {len(zones)} don't match"
+    assert len(set(zones) - {1, 2}) == 0, f'Zones must be either 1 or 2, seeing {set(zones)}'
+    assert set(ranks) == set(range(1, len(ranks) + 1)), f'Ranks must be the numbers 1 to len(ranks), instead seeing {ranks}'
 
     # decide which horses to keep
     df = pd.DataFrame({'name': names, 'rank': ranks, 'zone': zones})
@@ -57,7 +57,7 @@ def propose_merge(names: list, ranks: list, zones: list) -> str:
     # figure out which horses to move
     names_kill = list(df.query('zone == 1 and ~keep')['name'])
     names_move = list(df.query('zone == 2 and keep')['name'])
-    assert len(names_kill) == len(names_move), 'Sanity check failed, this is a weird error'
+    assert len(names_kill) == len(names_move), f'Sanity check failed, this is a weird error, {len(names_kill)}, {len(names_move)}'
 
     # write out the moves
     moves = []
@@ -83,8 +83,8 @@ def propose_reorg(names: list, ranks: list) -> str:
 
     FIXME improvement: list moves in digraph cycle order (for each connected component) to streamline execution
     """
-    assert len(names) == len(ranks)
-    assert set(ranks) == set(range(1, len(ranks) + 1)), 'Ranks must be the numbers 1 to len(ranks)'
+    assert len(names) == len(ranks), f"Lengths {len(names)} and {len(ranks)} don't match"
+    assert set(ranks) == set(range(1, len(ranks) + 1)), f'Ranks must be the numbers 1 to len(ranks), instead seeing {ranks}'
 
     # get the name reordering
     df = pd.DataFrame({'name': names, 'rank': ranks})

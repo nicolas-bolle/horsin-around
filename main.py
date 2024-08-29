@@ -3,7 +3,7 @@
 from ast import literal_eval
 from flask import Flask, render_template, request, redirect, url_for
 
-from src.utilities import parse_float, parse_list, parse_dataframe
+from src.utilities import parse_float, parse_int, parse_str, parse_list, parse_dataframe
 from src.decisions import get_ranks, propose_merge, propose_reorg
 
 app = Flask(__name__)
@@ -33,8 +33,8 @@ def get_ranks_app():
             Comma separated
     """
     inputs = get_inputs()
-    df_primary = parse_dataframe(inputs['data_primary'], inputs['cols_primary'])
-    df_secondary = parse_dataframe(inputs['data_secondary'], inputs['cols_secondary'])
+    df_primary = parse_dataframe(inputs['data_primary'], inputs['cols_primary'], 'float')
+    df_secondary = parse_dataframe(inputs['data_secondary'], inputs['cols_secondary'], 'float')
 
     s_ranks = get_ranks(df_primary, df_secondary)
     s = ','.join(s_ranks.astype(str))
@@ -58,9 +58,9 @@ def propose_merge_app():
             Comma separated
     """
     inputs = get_inputs()
-    names = parse_list(inputs['names'])
-    ranks = parse_list(inputs['ranks'])
-    zones = parse_list(inputs['zones'])
+    names = parse_list(inputs['names'], 'str')
+    ranks = parse_list(inputs['ranks'], 'int')
+    zones = parse_list(inputs['zones'], 'int')
 
     moves = propose_merge(names, ranks, zones)
     s = ','.join(moves)
@@ -81,8 +81,8 @@ def propose_reorg_app():
             Comma separated
     """
     inputs = get_inputs()
-    names = parse_list(inputs['names'])
-    ranks = parse_list(inputs['ranks'])
+    names = parse_list(inputs['names'], 'str')
+    ranks = parse_list(inputs['ranks'], 'int')
 
     moves = propose_reorg(names, ranks)
     s = ','.join(moves)
