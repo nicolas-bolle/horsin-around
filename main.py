@@ -29,15 +29,17 @@ def get_ranks_app():
         cols_secondary (list): column names for data_secondary
 
     Output:
-        ranks (list): integer ranks for the horses, from 1 to len(ranks)
+        ranks (str): integer ranks for the horses, from 1 to len(ranks)
+            Comma separated
     """
     inputs = get_inputs()
     df_primary = parse_dataframe(inputs['data_primary'], inputs['cols_primary'])
     df_secondary = parse_dataframe(inputs['data_secondary'], inputs['cols_secondary'])
 
     s_ranks = get_ranks(df_primary, df_secondary)
+    s = ','.join(s_ranks.values())
 
-    return list(s_ranks)
+    return s
 
 @app.route('/propose_merge', methods=['POST'])
 def propose_merge_app():
@@ -53,6 +55,7 @@ def propose_merge_app():
 
     Output:
         moves (str): description of moves to make
+            Comma separated
     """
     inputs = get_inputs()
     names = parse_list(inputs['names'])
@@ -60,8 +63,9 @@ def propose_merge_app():
     zones = parse_list(inputs['zones'])
 
     moves = propose_merge(names, ranks, zones)
+    s = ','.join(moves)
 
-    return moves
+    return s
 
 @app.route('/propose_reorg', methods=['POST'])
 def propose_reorg_app():
@@ -74,14 +78,16 @@ def propose_reorg_app():
     
     Returns:
         moves (str): description of moves to make
+            Comma separated
     """
     inputs = get_inputs()
     names = parse_list(inputs['names'])
     ranks = parse_list(inputs['ranks'])
 
     moves = propose_reorg(names, ranks)
+    s = ','.join(moves)
 
-    return moves
+    return s
 
 if __name__ == '__main__':
     app.run(debug=True)

@@ -42,7 +42,7 @@ def propose_merge(names: list, ranks: list, zones: list) -> str:
             Zone 2 is horses in a secondary population
     
     Returns:
-        moves (str): description of moves to make
+        moves (list): descriptions of moves to make
     """
     assert len(names) == len(ranks)
     assert len(names) == len(zones)
@@ -66,9 +66,9 @@ def propose_merge(names: list, ranks: list, zones: list) -> str:
         moves.append(move)
 
     if len(moves) == 0:
-        return 'No moves recommended'
+        return ['No moves recommended']
     else:
-        return '\n'.join(moves)
+        return moves
 
 def propose_reorg(names: list, ranks: list) -> str:
     """Spell out the moves we should do for a horse reorg
@@ -79,7 +79,7 @@ def propose_reorg(names: list, ranks: list) -> str:
         ranks (list): ranks of the horses
     
     Returns:
-        moves (str): description of moves to make
+        moves (list): descriptions of moves to make
 
     FIXME improvement: list moves in digraph cycle order (for each connected component) to streamline execution
     """
@@ -99,6 +99,6 @@ def propose_reorg(names: list, ranks: list) -> str:
         moves.append(move)
 
     if len(moves) == 0:
-        return 'No moves recommended'
+        return ['No moves recommended']
     else:
-        return '\n'.join(moves)
+        return moves
