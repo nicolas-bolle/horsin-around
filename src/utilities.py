@@ -84,6 +84,14 @@ def _check_pareto_optimal(row: pd.Series, df: pd.DataFrame) -> bool:
     return True
 
 
+def compute_energy(x) -> float:
+    """Compute an "energy" score for the input vector x
+    It's just the l2 norm
+    """
+    x = np.array(x)
+    return np.linalg.norm(x)
+
+
 def compute_centrality(x) -> float:
     """Compute a "centrality" score in the range [-1, 1] for the input vector x
     1 for pointing in the [1, ..., 1] direction
