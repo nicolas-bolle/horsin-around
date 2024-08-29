@@ -1,3 +1,3 @@
 FROM alpine
-COPY quickstart.sh /
-CMD ["/quickstart.sh"]
+COPY hello_world.sh /
+CMD ["/hello_world.sh"]
