@@ -89,7 +89,7 @@ def propose_reorg(names: list, ranks: list) -> str:
     # get the name reordering
     df = pd.DataFrame({'name': names, 'rank': ranks})
     names_old = list(df['name'])
-    names_new = list(df.sort_values('rank', ascending=False)['name'])
+    names_new = list(df.sort_values('rank', ascending=True)['name'])
 
     moves = []
     for name_old, name_new in zip(names_old, names_new):
