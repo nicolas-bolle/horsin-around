@@ -8,17 +8,20 @@ from src.decisions import get_ranks, propose_merge, propose_reorg
 
 app = Flask(__name__)
 
+
 def get_inputs():
     """Get the dictionary of inputs from the request
     Janky but good enough for now
     """
     return literal_eval(next(iter(request.values.keys())))
 
-@app.route('/hello_world', methods=['POST'])
-def hello_world():
-    return 'Hello, World!'
 
-@app.route('/get_ranks', methods=['POST'])
+@app.route("/hello_world", methods=["POST"])
+def hello_world():
+    return "Hello, World!"
+
+
+@app.route("/get_ranks", methods=["POST"])
 def get_ranks_app():
     """Compute ranks for some horses
 
@@ -33,15 +36,20 @@ def get_ranks_app():
             Comma separated
     """
     inputs = get_inputs()
-    df_primary = parse_dataframe(inputs['data_primary'], inputs['cols_primary'], 'float')
-    df_secondary = parse_dataframe(inputs['data_secondary'], inputs['cols_secondary'], 'float')
+    df_primary = parse_dataframe(
+        inputs["data_primary"], inputs["cols_primary"], "float"
+    )
+    df_secondary = parse_dataframe(
+        inputs["data_secondary"], inputs["cols_secondary"], "float"
+    )
 
     s_ranks = get_ranks(df_primary, df_secondary)
-    s = ','.join(s_ranks.astype(str))
+    s = ",".join(s_ranks.astype(str))
 
     return s
 
-@app.route('/propose_merge', methods=['POST'])
+
+@app.route("/propose_merge", methods=["POST"])
 def propose_merge_app():
     """Spell out the moves we should do for a horse merge
     Recommends moves that put the top N horses in Zone 1, where N is the size of Zone 1
@@ -58,16 +66,17 @@ def propose_merge_app():
             Comma separated
     """
     inputs = get_inputs()
-    names = parse_list(inputs['names'], 'str')
-    ranks = parse_list(inputs['ranks'], 'int')
-    zones = parse_list(inputs['zones'], 'int')
+    names = parse_list(inputs["names"], "str")
+    ranks = parse_list(inputs["ranks"], "int")
+    zones = parse_list(inputs["zones"], "int")
 
     moves = propose_merge(names, ranks, zones)
-    s = ','.join(moves)
+    s = ",".join(moves)
 
     return s
 
-@app.route('/propose_reorg', methods=['POST'])
+
+@app.route("/propose_reorg", methods=["POST"])
 def propose_reorg_app():
     """Spell out the moves we should do for a horse reorg
     Recommends moves that give the highest ranked horses the earliest names
@@ -75,19 +84,20 @@ def propose_reorg_app():
     Parameters:
         names (list): names of the horses
         ranks (list): ranks of the horses
-    
+
     Returns:
         moves (str): description of moves to make
             Comma separated
     """
     inputs = get_inputs()
-    names = parse_list(inputs['names'], 'str')
-    ranks = parse_list(inputs['ranks'], 'int')
+    names = parse_list(inputs["names"], "str")
+    ranks = parse_list(inputs["ranks"], "int")
 
     moves = propose_reorg(names, ranks)
-    s = ','.join(moves)
+    s = ",".join(moves)
 
     return s
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     app.run(debug=True)
