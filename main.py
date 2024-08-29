@@ -37,7 +37,7 @@ def get_ranks_app():
     df_secondary = parse_dataframe(inputs['data_secondary'], inputs['cols_secondary'])
 
     s_ranks = get_ranks(df_primary, df_secondary)
-    s = ','.join(s_ranks.values())
+    s = ','.join(s_ranks.astype(str))
 
     return s
 
