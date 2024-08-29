@@ -66,10 +66,10 @@ def flag_pareto_optimal(df: pd.DataFrame) -> list:
     If a point appears twice, both are flagged as Pareto optimal
     FIXME return a Series (really, avoid a list comp)
     """
-    return [check_pareto_optimal(df.iloc[i], df) for i in range(len(df))]
+    return [_check_pareto_optimal(df.iloc[i], df) for i in range(len(df))]
 
 
-def check_pareto_optimal(row: pd.Series, df: pd.DataFrame) -> bool:
+def _check_pareto_optimal(row: pd.Series, df: pd.DataFrame) -> bool:
     """Given a row of df and the full df, return True if this row is Pareto optimal and False otherwise"""
     # if the point appears at least twice, it's Pareto efficient
     num_appearances = (row == df).all(axis=1).sum()
@@ -97,3 +97,35 @@ def compute_centrality(x) -> float:
     x0 = x0 / np.linalg.norm(x0)
 
     return float(np.dot(x, x0))
+
+
+def cycle_reorder_perm_dict(perm_dict: dict) -> dict:
+    """Rebuild a dictionary giving a permutation so that cycles are handled in order
+    Relies on the fact that python 3.6+ maintains insertion order
+    """
+    # confirm this actually represents a permutation
+    assert set(perm_dict.keys()) == set(
+        perm_dict.keys()
+    ), f"Keys {perm_dict.keys} and values {perm_dict.keys} are not the same set"
+
+    perm_dict = perm_dict.copy()
+    perm_dict_new = {}
+    node = next(iter(perm_dict.keys()))
+
+    # transfer mappings into perm_dict_new until perm_dict is depleted
+    while perm_dict:
+        if node in perm_dict:
+            # we haven't transferred over this node's mapping, so transfer it
+            node_new = perm_dict[node]
+            perm_dict_new[node] = node_new
+            del perm_dict[node]
+
+            # move to the next node in the cycle
+            node = node_new
+
+        else:
+            # we've already transferred it, meaning we just completed a cycle
+            # so pick a fresh node
+            node = next(iter(perm_dict.keys()))
+
+    return perm_dict_new

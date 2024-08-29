@@ -3,7 +3,11 @@
 import numpy as np
 import pandas as pd
 
-from src.utilities import flag_pareto_optimal, compute_centrality
+from src.utilities import (
+    flag_pareto_optimal,
+    compute_centrality,
+    cycle_reorder_perm_dict,
+)
 
 
 def get_ranks(df_primary: pd.DataFrame, df_secondary: pd.DataFrame) -> pd.Series:
@@ -106,8 +110,6 @@ def propose_reorg(names: list, ranks: list) -> str:
 
     Returns:
         moves (list): descriptions of moves to make
-
-    FIXME improvement: list moves in digraph cycle order (for each connected component) to streamline execution
     """
     assert len(names) == len(
         ranks
@@ -117,15 +119,22 @@ def propose_reorg(names: list, ranks: list) -> str:
     ), f"Ranks must be the numbers 1 to len(ranks), instead seeing {ranks}"
 
     # get the name reordering
+    # "new" names are the names as-is, presuming the 1st spot is intended for the best horse
+    # "old" names are the names in ascending rank
+    # this means the 1st old name is moved into the highest spot (the 1st new name)
     df = pd.DataFrame({"name": names, "rank": ranks})
-    names_old = list(df["name"])
-    names_new = list(df.sort_values("rank", ascending=True)["name"])
+    names_new = list(df["name"])
+    names_old = list(df.sort_values("rank", ascending=True)["name"])
+    names_perm_dict = {
+        name_old: name_new for name_old, name_new in zip(names_old, names_new)
+    }
+    names_perm_dict = cycle_reorder_perm_dict(names_perm_dict)
 
     moves = []
-    for name_old, name_new in zip(names_old, names_new):
+    for name_old, name_new in names_perm_dict.items():
         if name_old == name_new:
             continue
-        move = f"Move {name_new} to {name_old}"
+        move = f"Move {name_old} to {name_new}"
         moves.append(move)
 
     if len(moves) == 0:
