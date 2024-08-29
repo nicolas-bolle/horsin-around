@@ -86,10 +86,10 @@ def _check_pareto_optimal(row: pd.Series, df: pd.DataFrame) -> bool:
 
 def compute_energy(x) -> float:
     """Compute an "energy" score for the input vector x
-    It's just the l2 norm
+    It's just the l1 norm
     """
     x = np.array(x)
-    return np.linalg.norm(x)
+    return np.sum(x)
 
 
 def compute_centrality(x) -> float:

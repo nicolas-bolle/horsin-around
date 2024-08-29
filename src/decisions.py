@@ -15,7 +15,7 @@ def get_ranks(df_primary: pd.DataFrame, df_secondary: pd.DataFrame) -> pd.Series
     """Given dataframes of primary and secondary criteria, return the rankings from 1 to len(df)
     Rank according to:
         1. Pareto optimality
-        2. Energy (l2 norm)
+        2. Energy (l1 norm)
         3. Level of "centrality"
         4. Primary attributes (in order)
         5. Secondary attributes (in order)
