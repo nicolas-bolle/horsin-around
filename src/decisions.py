@@ -14,7 +14,7 @@ def get_ranks(df_primary: pd.DataFrame, df_secondary: pd.DataFrame) -> pd.Series
         4. Secondary attributes (in order)
     """
     assert (df_primary.index == df_secondary.index).all(), f'Indexes {df_primary.index} and {df_secondary.index} not equal'
-    assert len(set(df_primary.columns) & set(df_secondary.columns)) == 0 f'Cols {df_primary.columns} and {df_secondary.columns} overlap'
+    assert len(set(df_primary.columns) & set(df_secondary.columns)) == 0, f'Cols {df_primary.columns} and {df_secondary.columns} overlap'
     
     df = df_primary.join(df_secondary)
 
