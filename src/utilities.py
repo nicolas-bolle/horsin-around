@@ -64,9 +64,8 @@ def parse_dataframe(
 def flag_pareto_optimal(df: pd.DataFrame) -> list:
     """Given a dataframe with numeric columns, return a list of bools flagging Pareto optimality
     If a point appears twice, both are flagged as Pareto optimal
-    FIXME return a Series (really, avoid a list comp)
     """
-    return [_check_pareto_optimal(df.iloc[i], df) for i in range(len(df))]
+    return df.apply(lambda row: _check_pareto_optimal(row, df), axis=1)
 
 
 def _check_pareto_optimal(row: pd.Series, df: pd.DataFrame) -> bool:
