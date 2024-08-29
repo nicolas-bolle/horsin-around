@@ -5,98 +5,96 @@ import pandas as pd
 
 from src.utilities import flag_pareto_optimal, compute_centrality
 
-# the columns we care about for stats, in order of importance
-COLS_PRIMARY = ['speed', 'jump']
-
-# cols to use for tiebreaks
-COLS_SECONDARY = ['health']
-
-# how many horses are in each of the zones
-N1 = 16
-N2 = 8
-
-def get_ranks(df: pd.DataFrame) -> pd.Series:
-    """Given a dataframe of points, return the rankings from 1 to len(df)
+def get_ranks(df_primary: pd.DataFrame, df_secondary: pd.DataFrame) -> pd.Series:
+    """Given dataframes of primary and secondary criteria, return the rankings from 1 to len(df)
     Rank according to:
         1. Pareto optimality
-        2. Level of "centrality"
+        2. Level of "centrality" FIXME switch to also weight the "total mass"
         3. Primary attributes (in order)
         4. Secondary attributes (in order)
     """
-    # FIXME added these to avoid pandas setting slice warnings but there must be a better way
-    df = df.copy() 
+    assert (df_primary.index == df_secondary.index).all()
+    assert len(set(df_primary.columns) & set(df_secondary.columns)) == 0
+    
+    df = df_primary.join(df_secondary)
 
     # flag Pareto optimal points
-    df['pareto_optimal'] = flag_pareto_optimal(df[COLS_PRIMARY])
+    df['pareto_optimal'] = flag_pareto_optimal(df_primary)
 
     # compute centrality scores
-    df['centrality'] = df[COLS_PRIMARY].apply(compute_centrality, axis=1)
+    df['centrality'] = df_primary.apply(compute_centrality, axis=1)
 
     # rank (higher values are better)
-    cols_ranking = ['pareto_optimal', 'centrality'] + COLS_PRIMARY + COLS_SECONDARY
+    cols_ranking = ['pareto_optimal', 'centrality'] + list(df_primary.columns) + list(df_secondary.columns)
     df['rank'] = df[cols_ranking].apply(tuple, axis=1).rank(method='first', ascending=False).astype(int)
 
     return df['rank']
 
-def get_keep_recs(df: pd.DataFrame)-> pd.Series:
-    """Given a dataframe of points, return bools for whether we should keep points
-    Flags 16 points as True, the rest as False
-    Return the top 16 most preferred points
-    Note: returning duplicate points is OK
+def propose_merge(names: list, ranks: list, zones: list) -> str:
+    """Spell out the moves we should do for a horse merge
+    Recommends moves that put the top N horses in Zone 1, where N is the size of Zone 1
+
+    Parameters:
+        names (list): names of the horses
+        ranks (list): ranks of the horses
+        zones (list): zones (either 1 or 2) of the horses
+            Zone 1 is horses in the main population
+            Zone 2 is horses in a secondary population
+    
+    Returns:
+        moves (str): description of moves to make
     """
-    df = df.copy()
+    assert len(names) == len(ranks)
+    assert len(names) == len(zones)
+    assert len(set(zones) - {1, 2}) == 0, 'Zones must be either 1 or 2'
+    assert set(ranks) == set(range(1, len(ranks) + 1)), 'Ranks must be the numbers 1 to len(ranks)'
 
-    # rank points
-    df['rank'] = get_ranks(df)
+    # decide which horses to keep
+    df = pd.DataFrame({'name': names, 'rank': ranks, 'zone': zones})
+    N = (df['zone'] == 1).sum()
+    df['keep'] = df['rank'] <= N
 
-    # flag which to keep
-    df['keep_rec'] = df['rank'] <= N1
+    # figure out which horses to move
+    names_kill = list(df.query('zone == 1 and ~keep')['name'])
+    names_move = list(df.query('zone == 2 and keep')['name'])
+    assert len(names_kill) == len(names_move), 'Sanity check failed, this is a weird error'
 
-    return df['keep_rec']
-
-def propose_merge(df1: pd.DataFrame, df2: pd.DataFrame) -> str:
-    """Recommend the rearrangements we should do for a horse merge"""
-    # prep
-    df1 = df1.copy()
-    df2 = df2.copy()
-    assert len(df1) == N1
-    assert len(df2) == N2
-    df1['zone'] = 1
-    df2['zone'] = 2
-    df = pd.concat([df1, df2])
-
-    # recommend which horses to keep
-    df['keep_rec'] = get_keep_recs(df)
-
-    # propose how to move them
-    names_kill = list(df.query('zone == 1 and ~keep_rec')['name'])
-    names_move = list(df.query('zone == 2 and keep_rec')['name'])
-    assert len(names_kill) == len(names_move)
-
-    merges = []
+    # write out the moves
+    moves = []
     for name_kill, name_move in zip(names_kill, names_move):
-        merge = f'Kill {name_kill} and replace it with {name_move}'
-        merges.append(merge)
+        move = f'Kill {name_kill} and replace it with {name_move}'
+        moves.append(move)
 
-    if len(merges) == 0:
-        return 'No merges recommended'
+    if len(moves) == 0:
+        return 'No moves recommended'
     else:
-        return '\n'.join(merges)
+        return '\n'.join(moves)
 
-def propose_reorg(df1: pd.DataFrame) -> str:
-    """Recommend the rearrangements we should do for a horse reorg
+def propose_reorg(names: list, ranks: list) -> str:
+    """Spell out the moves we should do for a horse reorg
+    Recommends moves that give the highest ranked horses the earliest names
+
+    Parameters:
+        names (list): names of the horses
+        ranks (list): ranks of the horses
+    
+    Returns:
+        moves (str): description of moves to make
+
     FIXME improvement: list moves in digraph cycle order (for each connected component) to streamline execution
     """
-    df1 = df1.copy()
+    assert len(names) == len(ranks)
+    assert set(ranks) == set(range(1, len(ranks) + 1)), 'Ranks must be the numbers 1 to len(ranks)'
 
-    assert len(df1) == N1
-    df1['rank'] = get_ranks(df1)
-    
-    names_old = list(df1['name'])
-    names_new = list(df1.sort_values('rank', ascending=False)['name'])
+    # get the name reordering
+    df = pd.DataFrame({'name': names, 'rank': ranks})
+    names_old = list(df['name'])
+    names_new = list(df.sort_values('rank', ascending=False)['name'])
 
     moves = []
     for name_old, name_new in zip(names_old, names_new):
+        if name_old == name_new:
+            continue
         move = f'Move {name_new} to {name_old}'
         moves.append(move)
 
