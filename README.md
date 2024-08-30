@@ -1,6 +1,8 @@
 # 🐴 Horsin around
 ***Minecraft horse breeding management: scoring high on multiple objectives in a stochastic game***
 
+See main.py for the Flask app this repo runs, and the functions it calls for the core processing.
+
 There are a lot of possible horses in Minecraft:
 ![image](https://github.com/user-attachments/assets/f8ba401a-155a-4ffb-ae82-a4619248d5ed)
 
