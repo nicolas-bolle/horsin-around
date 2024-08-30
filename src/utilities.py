@@ -63,25 +63,18 @@ def parse_dataframe(
 
 def flag_pareto_optimal(df: pd.DataFrame) -> list:
     """Given a dataframe with numeric columns, return a list of bools flagging Pareto optimality
-    If a point appears twice, both are flagged as Pareto optimal
+    Not the fasteset implementation, but it's readable
     """
-    return df.apply(lambda row: _check_pareto_optimal(row, df), axis=1)
+    _df = df.drop_duplicates()
+    return df.apply(lambda row: _check_pareto_optimal(row, _df), axis=1)
 
 
 def _check_pareto_optimal(row: pd.Series, df: pd.DataFrame) -> bool:
-    """Given a row of df and the full df, return True if this row is Pareto optimal and False otherwise"""
-    # if the point appears at least twice, it's Pareto efficient
-    num_appearances = (row == df).all(axis=1).sum()
-    if num_appearances > 1:
-        return True
-
-    # if the point is weakly dominated by at least 2 rows (itself and at least one other row), it's not Pareto efficient
+    """Given a row of df and the full df (with duplicates dropped), return True if this row is Pareto optimal and False otherwise
+    So the row is not Pareto efficient iff it is (weakly) dominated by at least 2 rows (one of them being itself)
+    """
     num_weak_dominating = (row <= df).all(axis=1).sum()
-    if num_weak_dominating > 1:
-        return False
-
-    # otherwise it's Pareto efficient
-    return True
+    return num_weak_dominating == 1
 
 
 def compute_energy(x) -> float:
