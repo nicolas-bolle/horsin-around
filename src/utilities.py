@@ -23,6 +23,11 @@ def parse_str(x) -> str:
     return str(x)
 
 
+def parse_bool(x) -> bool:
+    """Parse an input as a bool"""
+    return bool(x)
+
+
 def parse_list(x, _type: str) -> list:
     """Parse an input as a list, with the specified type
     Really just flattening the list if necessary
@@ -34,6 +39,8 @@ def parse_list(x, _type: str) -> list:
             parser = parse_int
         case "str":
             parser = parse_str
+        case "bool":
+            parser = parse_bool
         case _:
             assert False, f"Unknown type specification {_type}"
     return [parser(t) for t in np.array(x).flatten()]

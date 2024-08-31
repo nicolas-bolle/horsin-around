@@ -54,55 +54,89 @@ def get_ranks(df_primary: pd.DataFrame, df_secondary: pd.DataFrame) -> pd.Series
     return df["rank"]
 
 
-def propose_merge(names: list, ranks: list, zones: list) -> str:
+def propose_merge(names: list[str], keeps: list[bool], main_zones: list[bool]) -> str:
     """Spell out the moves we should do for a horse merge
     Recommends moves that put the top N horses in Zone 1, where N is the size of Zone 1
 
     Parameters:
         names (list): names of the horses
-        ranks (list): ranks of the horses
-        zones (list): zones (either 1 or 2) of the horses
-            Zone 1 is horses in the main population
-            Zone 2 is horses in a secondary population
+        keeps (list): flags for which horses to keep
+        main_zones (list): flags of which horses are in the "main" zone
 
     Returns:
-        moves (list): descriptions of moves to make
+        moves (list): descriptions of actions to take
     """
     assert len(names) == len(
-        ranks
-    ), f"Lengths {len(names)} and {len(ranks)} don't match"
+        keeps
+    ), f"Lengths {len(names)} and {len(keeps)} don't match"
     assert len(names) == len(
-        zones
-    ), f"Lengths {len(names)} and {len(zones)} don't match"
-    assert (
-        len(set(zones) - {1, 2}) == 0
-    ), f"Zones must be either 1 or 2, seeing {set(zones)}"
-    assert set(ranks) == set(
-        range(1, len(ranks) + 1)
-    ), f"Ranks must be the numbers 1 to len(ranks), instead seeing {ranks}"
+        main_zones
+    ), f"Lengths {len(names)} and {len(main_zones)} don't match"
+    assert all(
+        [isinstance(x, str) for x in names]
+    ), f"Names flags must be booleans, instead seeing {names}"
+    assert all(
+        [isinstance(x, bool) for x in keeps]
+    ), f"Keep flags must be booleans, instead seeing {keeps}"
+    assert all(
+        [isinstance(x, bool) for x in main_zones]
+    ), f"Main zone flags must be booleans, instead seeing {main_zones}"
 
-    # decide which horses to keep
-    df = pd.DataFrame({"name": names, "rank": ranks, "zone": zones})
-    N = (df["zone"] == 1).sum()
-    df["keep"] = df["rank"] <= N
+    # check that we can fit all the keepers in the main zone
+    assert sum(keeps) <= sum(
+        main_zones
+    ), f"Unable to fit the {sum(keeps)} in the {sum(main_zones)} main zone slots"
 
-    # figure out which horses to move
-    names_kill = list(df.query("zone == 1 and ~keep")["name"])
-    names_move = list(df.query("zone == 2 and keep")["name"])
-    assert (
-        len(names_kill) == len(names_move)
-    ), f"Sanity check failed, this is a weird error, {len(names_kill)}, {len(names_move)}"
+    # pre for making instructions
+    df = pd.DataFrame({"name": names, "keep": keeps, "main_zone": main_zones})
+    df["instruction_type"] = None
+    df["instruction"] = None
 
-    # write out the moves
-    moves = []
-    for name_kill, name_move in zip(names_kill, names_move):
-        move = f"Kill {name_kill} and replace it with {name_move}"
-        moves.append(move)
+    # main zone keepers
+    idx = df["main_zone"] & df["keep"]
+    df.loc[idx, "instruction_type"] = "keep"
 
-    if len(moves) == 0:
-        return ["No moves recommended"]
-    else:
-        return moves
+    # main zone killers
+    idx = df["main_zone"] & ~df["keep"]
+    df.loc[idx, "instruction_type"] = "kill_primary"
+
+    # secondary zone keepers
+    idx = ~df["main_zone"] & df["keep"]
+    df.loc[idx, "instruction_type"] = "move"
+
+    # secondary zone killers
+    idx = ~df["main_zone"] & ~df["keep"]
+    df.loc[idx, "instruction_type"] = "kill_secondary"
+
+    # sanity check
+    assert df["instruction_type"].isna().sum() == 0
+
+    # add detail to the "move" ones
+    idx_to_move = df.query('instruction_type == "move"').index
+    idx_to_move_into = df.query('instruction_type == "kill_primary"').index
+    assert len(idx_to_move) <= len(
+        idx_to_move_into
+    ), "If this assert fails, something weird is afoot"
+    idx_to_move_into = idx_to_move_into[: len(idx_to_move)]
+    for i, j in zip(idx_to_move, idx_to_move_into):
+        name_old = df.loc[i, "name"]
+        name_new = df.loc[j, "name"]
+        df.loc[i, "instruction"] = f"{name_old}: move to {name_new}"
+
+    # add detail to the keeps
+    idx = df.query('instruction_type == "keep"').index
+    df.loc[idx, "instruction"] = df["name"] + ": keep"
+
+    # add detail to the kills
+    idx = df.query('instruction_type in ("kill_primary", "kill_secondary")').index
+    df.loc[idx, "instruction"] = df["name"] + ": kill"
+
+    # sanity check
+    assert df["instruction"].isna().sum() == 0
+
+    # return the moves
+    moves = list(df["instruction"])
+    return moves
 
 
 def propose_reorg(names: list, ranks: list) -> str:

@@ -56,21 +56,19 @@ def propose_merge_app():
 
     Parameters:
         names (list): names of the horses
-        ranks (list): ranks of the horses
-        zones (list): zones (either 1 or 2) of the horses
-            Zone 1 is horses in the main population
-            Zone 2 is horses in a secondary population
+        keeps (list): flags for which horses to keep
+        main_zones (list): flags of which horses are in the "main" zone
 
     Output:
-        moves (str): description of moves to make
+        moves (str): description of actions to make
             Comma separated
     """
     inputs = get_inputs()
     names = parse_list(inputs["names"], "str")
-    ranks = parse_list(inputs["ranks"], "int")
-    zones = parse_list(inputs["zones"], "int")
+    keeps = parse_list(inputs["keeps"], "bool")
+    main_zones = parse_list(inputs["main_zones"], "bool")
 
-    moves = propose_merge(names, ranks, zones)
+    moves = propose_merge(names, keeps, main_zones)
     s = ",".join(moves)
 
     return s
