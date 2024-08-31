@@ -13,7 +13,11 @@ def get_inputs():
     """Get the dictionary of inputs from the request
     Janky but good enough for now
     """
-    return literal_eval(next(iter(request.values.keys())))
+    s = next(iter(request.values.keys()))
+    try:
+        return literal_eval(s)
+    except:
+        assert False, f"Failed to eval {s}"
 
 
 @app.route("/hello_world", methods=["POST"])
