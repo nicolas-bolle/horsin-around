@@ -3,3 +3,4 @@ matplotlib==3.8.0
 numpy==1.26.4
 pandas==2.1.4
 seaborn==0.12.2
+google-cloud-secret-manager==2.20.2
