@@ -1,7 +1,7 @@
-# 🐴 Horsin around
-***Minecraft horse breeding management: scoring high on multiple objectives in a stochastic game***
+# 🐴 Horsin' around
+***Minecraft horse breeding management: scoring high on multiple objectives via selection***
 
-See main.py for the Flask app this repo runs, and the functions it calls for the core processing.
+See [main.py](https://github.com/nicolas-bolle/horsin-around/blob/main/main.py) for the Flask app this repo runs and the functions it calls for the core processing. See [spreadsheet.pdf](https://github.com/nicolas-bolle/horsin-around/blob/main/spreadsheet.pdf) for a view of the front end I set up for the system.
 
 There are a lot of possible horses in Minecraft:
 ![image](https://github.com/user-attachments/assets/f8ba401a-155a-4ffb-ae82-a4619248d5ed)
@@ -19,19 +19,19 @@ This makes for an interesting problem: breeding to produce a good horse in these
 
 💻 Here's the system I settled on:
 1. In game: a zone of labled fenceposts to tie the adult horses to, and a second zone for the children after breeding
-2. A Google Sheets file for keeping track of horse stats
-3. A system for having the Sheet call Python code to recommend horse management moves:
+2. System frontend: a Google Sheets file for keeping track of horse stats
+3. System backend: something running Python code to recommend horse management moves:
     - Killing and moving around horses after a round of breeding, to drop low quality horses (and always keep the same number of horses)
     - Reordering the horses, to make sure we breed high quality horses with other high quality horses
 
-❗ Step (3) is the tricky one, and I ended up doing the following:
-1. The Sheet calling a [Script extension](https://www.google.com/script/start/) (find it via Google Sheets -> Extensions -> Apps script)
-2. That Script extension JavaScript following [this StackOverflow answer](https://stackoverflow.com/a/22933777) to make url requests
-3. A [Google Cloud](https://cloud.google.com/) service running the code in this repo to process the requests
+❗ Linking steps 2 and 3 was the hard part, since it was my first time setting up cloud computing, URL requests, and a Flask web app. Here's what I did:
+1. The Sheet calls a [Script extension](https://www.google.com/script/start/) (find it via Google Sheets -> Extensions -> Apps script) via buttons
+2. That Script extension follows [this StackOverflow answer](https://stackoverflow.com/a/22933777) to make URL requests
+3. A [Google Cloud](https://cloud.google.com/) service runs the code in this repo to receive and process the requests
 
-<mark>**So this code is designed to run on a Google Cloud service with their Python buildpack, using a Flask app to handle url requests.**</mark> Google Cloud's free options were enough for me to get the job done.
+<mark>**So this code is designed to run on a Google Cloud service with their Python buildpack.**</mark> Google Cloud's free options were enough for me to get the job done, since the service runs serverless and I needed minimal resources. I also built in some barebones security, requiring the user to know a password (that I stored away as a Google Cloud secret) for me to process their request.
 
-Once that link is set up (of the main Sheet calling Python), that gives lots of flexibility to play around with the management logic. Right now I have it
+Once that link is set up (of the frontend Sheet calling the backend Python), that gives lots of flexibility to play around with the management logic. Right now I have it
 - Ranking horses, according to
   - [Pareto efficiency](https://en.wikipedia.org/wiki/Pareto_efficiency)
   - Total value of the horse's stats
@@ -42,6 +42,12 @@ Once that link is set up (of the main Sheet calling Python), that gives lots of 
 
 The system is flexibile about which stats you want to optimize: for example, I'm largely ignoring health and just optimizing speed and jump but I could just pass the url fetch all three stats as "primaries" to optimize them all.
 
-📔 I really enjoying setting this up, since at the start I had no experience with Google Apps Scripts or Google Cloud. So it was a lot of learning, and there's a lot I still don't know (like what the url requests I'm relying on actually are! and how general these requests are: it looks like they build websites?...). This is definitely turning me towards learning more "backend" things like cloud management and how to make websites and apps with Python. But also I feel like I learned a lot about creating a framework for handling a complex problem in a user-friendly way: Google Sheets for ease of interaction, Python for ease of coding, and the "rank then decide" framework for giving the user visiblity into the decision process. Solutions to problems like this one could get arbitrarily complex, and my Python backend gives the ability to introduce a lot of complexity. But despite that, the duo of a simple in-game setup (of a fixed number of horses tied to fenceposts) and the easy-to-interact-with management system (Google Sheets) manages to keep everything transparent and organized.
+🌻 Here's a view of the frontend: [spreadsheet.pdf](https://github.com/nicolas-bolle/horsin-around/blob/main/spreadsheet.pdf). Users can edit the green outlined cells to enter in horse stats (while the rest of the sheet is protected). The buttons run scripts that call the Python backend and populate cells in the spreadsheet (the horse rankings and the human-readable instructions at the top right). Examples:
+- Horse A is rank 2 among the current horses in Zone 1, but rank 5 if you include the children in Zone 2
+- The reorg instructions result in horse K moving to slot A, since K is the highest ranked of the Zone 1 horses
+- The merge instructions result in horses C (rank 21) and S (rank 23) being killed, since they underperform other horses and there's not enough room for them in Zone 1
+- This wave of horse breeding improved our best horse from K (95% speed and 93% jump) to U (97% speed and 96% jump)!
 
-🥉 Lastly: the code is pretty low-tech, but I'd recommend Python version 3.6+ to ensure a (non-critical) part works correctly (a step that tidies instructions by relying on dictionaries preserving insertion order).
+📔 There was a lot of learning to do for this, since again I had never set up frontend/backend/requests. I used a qa server for testing during the early development, and when I finally got the URL requests to the backend working (with a simple "Hello, World!" and echoing the request payload) I still wasn't clear on what a URL request actually was! So next I'm working through getting a baseline understanding of internet/cloud/app specifics: stuff like the IP suite, APIs, Kubernetes, Flask, and finally learning Streamlit and Dash. There's also some light jank in this repo like [this function](https://github.com/nicolas-bolle/horsin-around/blob/13139ec3b3bf8ae194da1c37b94160fdc692b5f7/main.py#L20), which I'd like to clean up on the next project. My goal is to set up a website in the next few weeks: I have some HTML pages from grad school listing out projects I worked on, but it would be nice to start making web apps. Maybe there's a version of this horse management I can productionize: it could be cool to host a Minecraft horse management utility! Or gameify it a bit, like [this neat elevator programming game](https://play.elevatorsaga.com/). But at the very least, set up the infrastucture so I can pretty easily start deploying cool projects.
+
+🥉 Last thing: the code is pretty low-tech, but I'd recommend Python version 3.6+ to ensure a (non-critical) part works correctly (a step that tidies instructions by relying on dictionaries preserving insertion order).
