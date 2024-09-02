@@ -5,7 +5,12 @@ import pandas as pd
 
 
 def parse_float(x: float | str) -> float:
-    """Parse an input as a float in [0, 1], whether it's a float or a string"""
+    """Parse an input as a float in [0, 1], whether it's a float or a string
+    Empty strings are parsed as zero
+    """
+    if isinstance(x, str) and (x == "" or x == "%"):
+        return 0
+
     if isinstance(x, str):
         assert x.endswith("%"), f"Error parsing {x} as float"
         return float(x.replace("%", "")) / 100
@@ -14,7 +19,12 @@ def parse_float(x: float | str) -> float:
 
 
 def parse_int(x: int | float | str) -> int:
-    """Parse an input as an int"""
+    """Parse an input as an int
+    Empty strings are parsed as zero
+    """
+    if isinstance(x, str) and (x == ""):
+        return 0
+
     return int(x)
 
 
