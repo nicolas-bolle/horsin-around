@@ -8,7 +8,7 @@ def parse_float(x: float | str) -> float:
     """Parse an input as a float in [0, 1], whether it's a float or a string
     Empty strings are parsed as zero
     """
-    if isinstance(x, str) and (x == "" or x == "%"):
+    if isinstance(x, str) and (x.strip() in ("", "%")):
         return 0
 
     if isinstance(x, str):
@@ -22,7 +22,7 @@ def parse_int(x: int | float | str) -> int:
     """Parse an input as an int
     Empty strings are parsed as zero
     """
-    if isinstance(x, str) and (x == ""):
+    if isinstance(x, str) and (x.strip() == ""):
         return 0
 
     return int(x)
