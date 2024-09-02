@@ -87,10 +87,9 @@ def propose_merge(names: list[str], keeps: list[bool], main_zones: list[bool]) -
         main_zones
     ), f"Unable to fit the {sum(keeps)} in the {sum(main_zones)} main zone slots"
 
-    # pre for making instructions
+    # prep for making instructions
     df = pd.DataFrame({"name": names, "keep": keeps, "main_zone": main_zones})
     df["instruction_type"] = None
-    df["instruction"] = None
 
     # main zone keepers
     idx = df["main_zone"] & df["keep"]
@@ -111,7 +110,24 @@ def propose_merge(names: list[str], keeps: list[bool], main_zones: list[bool]) -
     # sanity check
     assert df["instruction_type"].isna().sum() == 0
 
-    # add detail to the "move" ones
+    # start making the instructions
+    moves = []
+
+    # first the primary kills
+    idx = df.query('instruction_type == "kill_primary"').index
+    names_to_kill_primary = list(df.loc[idx, "name"])
+    if names_to_kill_primary:
+        move = "Kill: " + ", ".join(names_to_kill_primary)
+        moves.append(move)
+
+    # then the secondary kills
+    idx = df.query('instruction_type == "kill_secondary"').index
+    names_to_kill_secondary = list(df.loc[idx, "name"])
+    if names_to_kill_secondary:
+        move = "Kill: " + ", ".join(names_to_kill_secondary)
+        moves.append(move)
+
+    # and then moving the "move" ones into the open spots
     idx_to_move = df.query('instruction_type == "move"').index
     idx_to_move_into = df.query('instruction_type == "kill_primary"').index
     assert len(idx_to_move) <= len(
@@ -121,21 +137,9 @@ def propose_merge(names: list[str], keeps: list[bool], main_zones: list[bool]) -
     for i, j in zip(idx_to_move, idx_to_move_into):
         name_old = df.loc[i, "name"]
         name_new = df.loc[j, "name"]
-        df.loc[i, "instruction"] = f"{name_old}: move to {name_new}"
+        move = f"Move {name_old} to {name_new}"
+        moves.append(move)
 
-    # add detail to the keeps
-    idx = df.query('instruction_type == "keep"').index
-    df.loc[idx, "instruction"] = df["name"] + ": keep"
-
-    # add detail to the kills
-    idx = df.query('instruction_type in ("kill_primary", "kill_secondary")').index
-    df.loc[idx, "instruction"] = df["name"] + ": kill"
-
-    # sanity check
-    assert df["instruction"].isna().sum() == 0
-
-    # return the moves
-    moves = list(df["instruction"])
     return moves
 
 
