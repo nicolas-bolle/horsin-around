@@ -7,7 +7,7 @@ from src.utilities import (
     flag_pareto_optimal,
     compute_energy,
     compute_centrality,
-    cycle_reorder_perm_dict,
+    permutation_cycle_decomp,
 )
 
 
@@ -160,20 +160,49 @@ def propose_reorg(names: list, ranks: list) -> str:
     # get the name reordering
     # "new" names are the names as-is, presuming the 1st spot is intended for the best horse
     # "old" names are the names in ascending rank
-    # this means the 1st old name is moved into the highest spot (the 1st new name)
+    # this means the highest rank old name is moved into the highest spot (the highest new name)
     df = pd.DataFrame({"name": names, "rank": ranks})
     names_new = list(df["name"])
     names_old = list(df.sort_values("rank", ascending=True)["name"])
     names_perm_dict = {
         name_old: name_new for name_old, name_new in zip(names_old, names_new)
     }
-    names_perm_dict = cycle_reorder_perm_dict(names_perm_dict)
 
+    # cycle decomp for easier to follow instructions
+    names_perm_dicts = permutation_cycle_decomp(names_perm_dict)
+
+    # forming instructions
     moves = []
-    for name_old, name_new in names_perm_dict.items():
-        if name_old == name_new:
+    for names_perm_dict in names_perm_dicts:
+        # ignore horses that don't move
+        if len(names_perm_dict) == 1:
             continue
-        move = f"Move {name_old} to {name_new}"
+
+        # special instruction for swaps
+        if len(names_perm_dict) == 2:
+            name1, name2 = next(iter(names_perm_dict.items()))
+            name1, name2 = tuple(sorted([name1, name2]))
+            move = f"Swap {name1} and {name2}"
+            moves.append(move)
+            continue
+
+        # a list of tuples (name_old, name_new)
+        # we should stash away the last name_new and then do the moves in reverse order
+        cycle = list(names_perm_dict.items())
+
+        name_stash = cycle[-1][1]
+        move = f"Stash {name_stash}"
+        moves.append(move)
+
+        for name_old, name_new in reversed(cycle):
+            if name_old == name_new:
+                continue
+            move = f"Move {name_old} to {name_new}"
+            moves.append(move)
+
+        # rewrite that last instruction
+        moves.pop()
+        move = f"Move the stashed horse to {name_new}"
         moves.append(move)
 
     if len(moves) == 0:

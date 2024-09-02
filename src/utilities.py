@@ -106,17 +106,21 @@ def compute_centrality(x) -> float:
     return float(np.dot(x, x0))
 
 
-def cycle_reorder_perm_dict(perm_dict: dict) -> dict:
-    """Rebuild a dictionary giving a permutation so that cycles are handled in order
+def permutation_cycle_decomp(perm_dict: dict) -> dict:
+    """Given a permutation dictionary, convert it to a list of dictionaries where each one is in cycle order
+    "Cycle order" is that the value of one is the key of the next, like {1: 3, 3: 2, 2: 1}
     Relies on the fact that python 3.6+ maintains insertion order
     """
     # confirm this actually represents a permutation
     assert set(perm_dict.keys()) == set(
-        perm_dict.keys()
-    ), f"Keys {perm_dict.keys} and values {perm_dict.keys} are not the same set"
+        perm_dict.values()
+    ), f"Keys {perm_dict.keys()} and values {perm_dict.values()} are not the same set"
 
     perm_dict = perm_dict.copy()
+    perm_dicts_new = []
     perm_dict_new = {}
+    perm_dicts_new.append(perm_dict_new)
+
     node = next(iter(perm_dict.keys()))
 
     # transfer mappings into perm_dict_new until perm_dict is depleted
@@ -132,7 +136,11 @@ def cycle_reorder_perm_dict(perm_dict: dict) -> dict:
 
         else:
             # we've already transferred it, meaning we just completed a cycle
-            # so pick a fresh node
+            # so start a new cycle
+            perm_dict_new = {}
+            perm_dicts_new.append(perm_dict_new)
+
+            # with a fresh node
             node = next(iter(perm_dict.keys()))
 
-    return perm_dict_new
+    return perm_dicts_new
