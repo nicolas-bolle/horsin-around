@@ -205,7 +205,9 @@ def propose_reorg(names: list, ranks: list) -> str:
         move = f"Move the stashed horse to {name_new}"
         moves.append(move)
 
+    # a bit janky, but just making sure the output definitely looks like a list
     if len(moves) == 0:
-        return ["No moves recommended"]
-    else:
-        return moves
+        moves = ["No moves recommended"]
+    if len(moves) < 2:
+        moves.append("")
+    return moves
