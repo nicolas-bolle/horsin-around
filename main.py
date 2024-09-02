@@ -37,7 +37,7 @@ def get_ranks_app():
 
     Output:
         ranks (str): integer ranks for the horses, from 1 to len(ranks)
-            Comma separated
+            Semicolon delimited
     """
     inputs = get_inputs()
     df_primary = parse_dataframe(
@@ -48,7 +48,7 @@ def get_ranks_app():
     )
 
     s_ranks = get_ranks(df_primary, df_secondary)
-    s = ",".join(s_ranks.astype(str))
+    s = ";".join(s_ranks.astype(str))
 
     return s
 
@@ -65,7 +65,7 @@ def propose_merge_app():
 
     Output:
         moves (str): description of actions to make
-            Comma separated
+            Semicolon delimited
     """
     inputs = get_inputs()
     names = parse_list(inputs["names"], "str")
@@ -73,7 +73,7 @@ def propose_merge_app():
     main_zones = parse_list(inputs["main_zones"], "bool")
 
     moves = propose_merge(names, keeps, main_zones)
-    s = ",".join(moves)
+    s = ";".join(moves)
 
     return s
 
@@ -89,14 +89,14 @@ def propose_reorg_app():
 
     Returns:
         moves (str): description of moves to make
-            Comma separated
+            Semicolon delimited
     """
     inputs = get_inputs()
     names = parse_list(inputs["names"], "str")
     ranks = parse_list(inputs["ranks"], "int")
 
     moves = propose_reorg(names, ranks)
-    s = ",".join(moves)
+    s = ";".join(moves)
 
     return s
 
